@@ -136,7 +136,13 @@ export function SidebarHotel() {
               </button>
               {open === 3 && (
                 <div className="pl-6">
-                  <button className="block w-full text-left p-2 text-gray-200">Promotion</button>
+                   <Link
+                    to="/PromotionManagement"
+                    onClick={() => handleOpen(3)}
+                    className="block w-full text-left p-2 text-gray-200"
+                  >
+                    PromotionManagement
+                  </Link>
                   <button className="block w-full text-left p-2 text-gray-200">Expenses</button>
                   <button className="block w-full text-left p-2 text-gray-200">Booking</button>
                 </div>

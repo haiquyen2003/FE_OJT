@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogActions, DialogContent, DialogTitle, Button, TextField, Typography, Box, Grid, Chip, IconButton } from '@mui/material';
 import { DropzoneArea } from 'material-ui-dropzone';
 import { Delete } from '@mui/icons-material';
@@ -29,6 +29,7 @@ const RoomTypeDialog = ({
   const [newImages, setNewImages] = useState([]);
   const [selectedAmenitiesState, setSelectedAmenitiesState] = useState([]);
 
+  // Chạy mỗi khi open dialog hoặc editRoom thay đổi
   useEffect(() => {
     if (editRoom && open) {
       if (nameRef.current) nameRef.current.value = editRoom.name || '';
@@ -44,12 +45,14 @@ const RoomTypeDialog = ({
       setImages(imageUrls);
       console.log('Loaded Images:', imageUrls); // Log image URLs to check if they are being loaded
       setSelectedAmenitiesState(editRoom.amenity.map(amenity => amenity.amenitieId) || []);
+    } else if (!editRoom && open) {
+      // Nếu không phải là chỉnh sửa (create new room)
+      setImages([]);
+      setStartDate('');
+      setEndDate('');
+      setSelectedAmenitiesState([]);
     }
   }, [editRoom, open]);
-
-  useEffect(() => {
-    console.log('Images state:', images); // Log images state whenever it changes
-  }, [images]);
 
   const handleImageChange = (files) => {
     console.log('Selected Images:', files); // Log selected images to verify changes
@@ -75,13 +78,13 @@ const RoomTypeDialog = ({
     }
     setImages((prevImages) => prevImages.filter((_, i) => i !== index));
   };
-  
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>{editRoom ? 'Edit Room Type' : 'Add Room Type'}</DialogTitle>
       <DialogContent>
         <Grid container spacing={2}>
+          {/* Các trường thông tin chung */}
           <Grid item xs={12}>
             <TextField
               inputRef={nameRef}
@@ -182,6 +185,8 @@ const RoomTypeDialog = ({
               onChange={(e) => setEndDate(e.target.value)}
             />
           </Grid>
+
+          {/* Chọn tiện nghi */}
           <Grid item xs={12}>
             <Box sx={{ mt: 2 }}>
               <Typography variant="body1" gutterBottom>
@@ -206,6 +211,8 @@ const RoomTypeDialog = ({
               </Box>
             </Box>
           </Grid>
+
+          {/* Thêm hình ảnh */}
           <Grid item xs={12}>
             <Box sx={{ mt: 2 }}>
               <Typography variant="body1" gutterBottom>

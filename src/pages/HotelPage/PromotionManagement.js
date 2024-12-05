@@ -3,11 +3,10 @@ import { Button } from '@mui/material';
 import PromotionTable from './PromotionComponent/PromotionTable';
 import PromotionFormDialog from './PromotionComponent/PromotionFormDialog';
 import HotelLayout from '../../components/HOTEL/HotelLayout';
-
-const samplePromotions = [/* same data as before */];
+import axios from 'axios';
 
 const PromotionManagement = () => {
-  const [promotions, setPromotions] = useState(samplePromotions);
+  const [promotions, setPromotions] = useState([]);
   const [newPromotion, setNewPromotion] = useState({
     service_id: 0,
     offering_id: null,
@@ -16,100 +15,178 @@ const PromotionManagement = () => {
     end_date: '',
     usage_limit: null,
     promocode: null,
+    campaign_name: '',
     conditions: [],
   });
   const [editingPromotion, setEditingPromotion] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
+  const [amenitiesList, setAmenitiesList] = useState([]);
 
-  // Define all the necessary functions here:
+  useEffect(() => {
+    fetchPromotions();
+    fetchOfferings();
+  }, []);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewPromotion((prev) => ({ ...prev, [name]: value }));
+  const fetchPromotions = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token found, please login');
+      return;
+    }
+
+    try {
+      const response = await axios.get('https://localhost:7253/provider/promotions', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      setPromotions(response.data);
+    } catch (error) {
+      console.error('Failed to fetch promotions', error);
+    }
   };
 
-  const handleConditionChange = (index, field, value) => {
-    const newConditions = [...(newPromotion.conditions || [])];
-    newConditions[index] = { ...newConditions[index], [field]: value };
-    setNewPromotion((prev) => ({ ...prev, conditions: newConditions }));
+  const fetchOfferings = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('https://localhost:7253/api/Offering/GetAllServiceOfferingsbyIdProvider', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const offeringsWithId = response.data.map((offering) => ({ ...offering, id: offering.offeringId }));
+      setAmenitiesList(offeringsWithId);
+    } catch (error) {
+      console.error('Error fetching offerings:', error);
+    }
   };
 
-  const addCondition = () => {
-    setNewPromotion((prev) => ({
-      ...prev,
-      conditions: [...(prev.conditions || []), { type: '', value: '' }],
-    }));
+  const handleCreatePromotion = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token found, please login');
+      return;
+    }
+
+    try {
+      const response = await axios.post('https://localhost:7253/provider/promotions', newPromotion, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const createdPromotion = response.data;
+      setPromotions((prevPromotions) => [...prevPromotions, createdPromotion]);
+
+      setNewPromotion({
+        service_id: 0,
+        offering_id: null,
+        discount_percentage: 0,
+        start_date: '',
+        end_date: '',
+        usage_limit: null,
+        promocode: null,
+        campaign_name: '',
+        conditions: [],
+      });
+
+      setOpenDialog(false);
+      fetchPromotions(); // Refresh the promotions list
+    } catch (error) {
+      console.error('Failed to create promotion', error);
+    }
   };
 
-  const removeCondition = (index) => {
-    setNewPromotion((prev) => ({
-      ...prev,
-      conditions: prev.conditions.filter((_, i) => i !== index),
-    }));
+  const handleUpdatePromotion = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token found, please login');
+      return;
+    }
+
+    try {
+      const response = await axios.put(
+        `https://localhost:7253/provider/promotions/${editingPromotion.promotionId}`,
+        editingPromotion,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const updatedPromotion = response.data;
+      setPromotions((prevPromotions) =>
+        prevPromotions.map((promotion) =>
+          promotion.promotionId === updatedPromotion.promotionId
+            ? updatedPromotion
+            : promotion
+        )
+      );
+
+      setEditingPromotion(null);
+      setOpenDialog(false);
+      fetchPromotions(); // Refresh the promotions list
+    } catch (error) {
+      console.error('Failed to update promotion', error);
+    }
   };
 
-  const handleCreatePromotion = () => {
-    const newId = Math.max(...promotions.map((p) => p.promotion_id)) + 1;
-    const createdPromotion = { ...newPromotion, promotion_id: newId, is_active: true };
-    setPromotions([...promotions, createdPromotion]);
-    setNewPromotion({
-      service_id: 0,
-      offering_id: null,
-      discount_percentage: 0,
-      start_date: '',
-      end_date: '',
-      usage_limit: null,
-      promocode: null,
-      conditions: [],
-    });
-    setOpenDialog(false);
-  };
-
-  const handleUpdatePromotion = () => {
-    const updatedPromotions = promotions.map((p) =>
-      p.promotion_id === editingPromotion.promotion_id ? editingPromotion : p
-    );
-    setPromotions(updatedPromotions);
-    setEditingPromotion(null);
-    setOpenDialog(false);
+  const handleEditPromotion = (promotion) => {
+    // Ensure that the conditions array exists
+    const promotionWithConditions = {
+      ...promotion,
+      conditions: promotion.conditions || [],
+    };
+    setEditingPromotion(promotionWithConditions);
+    setNewPromotion(promotionWithConditions);
+    setOpenDialog(true);
   };
 
   return (
     <HotelLayout>
       <div className="container mx-auto p-4">
         <h1 className="text-2xl font-bold mb-4">Promotion Management</h1>
-        <Button variant="contained" color="primary" onClick={() => {
-          setNewPromotion({
-            service_id: 0,
-            offering_id: null,
-            discount_percentage: 0,
-            start_date: '',
-            end_date: '',
-            usage_limit: null,
-            promocode: null,
-            conditions: [],
-          });
-          setOpenDialog(true);
-        }}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => {
+            setNewPromotion({
+              service_id: 0,
+              offering_id: null,
+              discount_percentage: 0,
+              start_date: '',
+              end_date: '',
+              usage_limit: null,
+              promocode: null,
+              campaign_name: '',
+              conditions: [],
+            });
+            setEditingPromotion(null);
+            setOpenDialog(true);
+          }}
+        >
           Create New Promotion
         </Button>
-        
+
         <PromotionFormDialog
           openDialog={openDialog}
           setOpenDialog={setOpenDialog}
-          newPromotion={newPromotion}
-          setNewPromotion={setNewPromotion}
+          newPromotion={editingPromotion || newPromotion}
+          setNewPromotion={editingPromotion ? setEditingPromotion : setNewPromotion}
           handleCreatePromotion={handleCreatePromotion}
           editingPromotion={editingPromotion}
           handleUpdatePromotion={handleUpdatePromotion}
-          handleConditionChange={handleConditionChange}
-          addCondition={addCondition}
-          removeCondition={removeCondition}
+          amenitiesList={amenitiesList}
         />
+
         <PromotionTable
           promotions={promotions}
           setPromotions={setPromotions}
-          setEditingPromotion={setEditingPromotion}
+          setEditingPromotion={handleEditPromotion}
           setOpenDialog={setOpenDialog}
         />
       </div>
@@ -118,3 +195,4 @@ const PromotionManagement = () => {
 };
 
 export default PromotionManagement;
+

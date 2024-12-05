@@ -4,6 +4,7 @@ import Footer from '../components/Footer';
 import { FaMapMarkerAlt, FaCalendarAlt, FaUserFriends, FaBed, FaStar } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import HeroSection from './HomepageSestion/HeroSection';
 const HomePage = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -63,25 +64,64 @@ const HomePage = () => {
     <div>
       <Header searchQuery={searchQuery} setSearchQuery={setSearchQuery} suggestions={suggestions} />
       
-      {/* Hero Section */}
-      <section
-        className="relative h-screen flex items-center justify-center text-white"
-        style={{
-          backgroundImage: "url('https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          height: '700px'
-        }}
+
+ {/* Hero Section */}
+ <HeroSection />
+
+{/* <section
+  className="relative h-screen flex items-center justify-center text-white"
+  style={{
+    backgroundImage: "url('https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1')",
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+  }}
+>
+  <div className="absolute inset-0 bg-black opacity-50"></div> 
+  
+  <div className="z-10 text-center px-4">
+    <h1 className="text-5xl font-bold mb-4">Explore the World</h1>
+    <p className="text-xl mb-8">Discover new adventures and create unforgettable memories</p>
+    
+
+    <div className="bg-white rounded-full shadow-lg p-4 max-w-5xl mx-auto flex items-center justify-between space-x-4">
+      <input
+        type="text"
+        placeholder="Where would you like to stay?"
+        className="w-1/4 p-3 rounded-md border focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      
+      <input
+        type="date"
+        className="w-1/4 p-3 rounded-md border focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      
+      <input
+        type="date"
+        className="w-1/4 p-3 rounded-md border focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      
+      <select
+        className="w-1/4 p-3 rounded-md border focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
-        <div className="absolute inset-0 bg-black opacity-50"></div>
-        <div className="z-10 text-center">
-          <h1 className="text-5xl font-bold mb-4">Explore the World</h1>
-          <p className="text-xl mb-8">Discover new adventures and create unforgettable memories</p>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full transition duration-300">
-            Start Your Journey
-          </button>
-        </div>
-      </section>
+        <option value="">Guests</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4+</option>
+      </select>
+      
+      <button className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-8 rounded-full transition duration-300">
+        Search
+      </button>
+    </div>
+
+    <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full mt-6 transition duration-300">
+      Start Your Journey
+    </button>
+  </div>
+</section> */}
+
+
 
       {/* Featured Destinations */}
       <section className="py-16 bg-gray-100">

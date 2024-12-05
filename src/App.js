@@ -24,6 +24,8 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import PageNotFound from './pages/PageNotFound';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import DestinationsPage from './pages/destinations';
+import SearchResultsPage from './pages/HomepageSestion/SearchResultsPage';
+import HotelDetailPage from './pages/HotelPage/HotelDetailPage';
 
 // PrivateRoute component to protect specific routes based on roles
 const PrivateRoute = ({ element: Component, roles, ...rest }) => {
@@ -66,7 +68,9 @@ function App() {
     <Router>
       <Routes>
         {/* Public Routes */}
+
         <Route path="/" element={<HomePage />} />
+        <Route path="/search-results" element={<SearchResultsPage />} />
         <Route path="/sign-in" element={<LoginPage />} />
         <Route path="/sign-up" element={<RegisterPage />} />
         <Route path="/ForgotPassword" element={<ForgotPasswordPage/>} />
@@ -76,7 +80,7 @@ function App() {
         <Route path="/tours/:tourId" element={<TourDetailPage />} />
         <Route path="/destinations" element={<DestinationsPage />} />
         <Route path="/resetpass" element={<ResetPasswordPage />} />
-        
+        <Route path="/hotel/:serviceId" element={<HotelDetailPage />} />
         {/* Protected Routes for USER role */}
         <Route
           path="/profile"

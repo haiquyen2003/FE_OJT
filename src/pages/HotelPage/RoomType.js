@@ -163,7 +163,7 @@ const handleImageDelete = (imageId) => {
         });
       } else {
         // Create new room
-        await axios.post('https://localhost:7253/api/ServiceOffering/CreateOffering', formData, {
+        await axios.post('https://localhost:7253/api/Offering/CreateOffering', formData, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data',

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
   Card, 
   CardContent, 
@@ -90,8 +91,40 @@ export default function WalletManagementPage() {
     }
   };
 
-  const handleAddMoney = (method) => {
-    setSelectedMethod(method);
+  const handleAddMoney = async (method) => {
+    if (method === 'VNPay') {
+      try {
+        const response = await axios.post('https://localhost:7253/api/Wallet/top-up',
+          {
+            amount: parseFloat(amount),
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (response.status === 200) {
+          const newTransaction = {
+            id: transactions.length + 1,
+            date: new Date().toISOString().split('T')[0],
+            amount: parseFloat(amount),
+            type: 'deposit',
+            method: 'VNPay',
+            description: `Nạp tiền qua VNPay`,
+            status: 'Success',
+          };
+          setTransactions([newTransaction, ...transactions]);
+          setBalance(balance + parseFloat(amount));
+        } else {
+          console.error('Transaction failed');
+        }
+      } catch (error) {
+        console.error('Error during VNPay top-up:', error);
+      }
+    }
     setOpenDialog(true);
   };
 
@@ -103,17 +136,7 @@ export default function WalletManagementPage() {
 
   const handleConfirmAddMoney = () => {
     if (!isNaN(parseFloat(amount)) && parseFloat(amount) > 0) {
-      const newTransaction = {
-        id: transactions.length + 1,
-        date: new Date().toISOString().split('T')[0],
-        amount: parseFloat(amount),
-        type: 'deposit',
-        method: selectedMethod,
-        description: `Nạp tiền qua ${selectedMethod}`,
-        status: transactionStatus,
-      };
-      setTransactions([newTransaction, ...transactions]);
-      setBalance(balance + parseFloat(amount));
+      handleAddMoney(selectedMethod);
     }
     setOpenDialog(false);
     setAmount('');
@@ -307,13 +330,3 @@ export default function WalletManagementPage() {
     </Layout>
   );
 }
-
-// Table ExternalPayment
-// external_payment_id int [primary key]
-// user_id int [ref: > AspNetUsers.Id]
-// provider varchar [note: 'Tên của bên cung cấp, ví dụ: MoMo']
-// transaction_id varchar [note: 'ID giao dịch từ MoMo']
-// amount decimal
-// status varchar [note: 'Pending, Success, Failed']
-// created_at timestamp 
-// completed_at timestamp
