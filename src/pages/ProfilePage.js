@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
-import { FaUserCircle } from 'react-icons/fa';
 
 // Helper function to decode the JWT token and extract UserId from claims
 const getUserIdFromToken = (token) => {
@@ -18,6 +17,8 @@ const ProfilePage = () => {
   const [editingField, setEditingField] = useState(null);
   const [fieldValue, setFieldValue] = useState('');
   const [userInfo, setUserInfo] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);  // State to hold selected image
+  const [imagePreview, setImagePreview] = useState(null); // State to show image preview
 
   // Get the token from localStorage
   const token = localStorage.getItem('token');
@@ -49,15 +50,65 @@ const ProfilePage = () => {
     }
   };
 
+  // Fetch user information on component mount
   useEffect(() => {
     fetchUserInfo(); // Fetch user info when component mounts
   }, []);
 
+  // Handle image file change
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result); // Set image preview
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle image upload
+  const handleImageUpload = async () => {
+    if (!selectedImage) {
+      console.error('No image selected!');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('Image', selectedImage);
+
+    try {
+      const response = await fetch('https://localhost:7253/api/User/update-image', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Error updating profile image');
+      }
+
+      const data = await response.json();
+      console.log('Profile image updated', data);
+      setUserInfo(prevInfo => ({
+        ...prevInfo,
+        image: data.imageUrl, // Update user info with new image URL
+      }));
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    }
+  };
+
+  // Handle edit button click
   const handleEditClick = (field, currentValue) => {
     setEditingField(field);
     setFieldValue(currentValue);
   };
 
+  // Handle save
   const handleSave = async () => {
     if (!token) {
       console.error('No token available!');
@@ -96,10 +147,12 @@ const ProfilePage = () => {
     }
   };
 
+  // Handle cancel
   const handleCancel = () => {
     setEditingField(null); // Close the edit form without saving
   };
 
+  // Render editable field
   const renderEditableField = (fieldName, label, currentValue) => {
     return editingField === fieldName ? (
       <div className="flex flex-col border-b pb-4">
@@ -137,13 +190,47 @@ const ProfilePage = () => {
           <div className="grid grid-cols-1 gap-6">
             <div className="flex flex-col md:flex-row justify-between items-center mb-10">
               <div className="flex items-center space-x-6">
-                <FaUserCircle className="text-7xl text-blue-500" />
+                {/* Hiển thị hình ảnh người dùng */}
+                <img
+                  src={userInfo.image ? userInfo.image : 'default-avatar-url'}
+                  alt="User Avatar"
+                  className="w-32 h-32 rounded-full object-cover"
+                />
                 <div>
                   <h2 className="text-3xl font-bold text-gray-900">{userInfo.userName}</h2>
-                  <p className="text-lg text-gray-700">{userInfo.email} <span className="text-green-600 font-semibold">Verified</span></p>
+                  <p className="text-lg text-gray-700">
+                    {userInfo.email} <span className="text-green-600 font-semibold">Verified</span>
+                  </p>
                 </div>
               </div>
             </div>
+
+            {/* Chọn ảnh và cập nhật ảnh */}
+            <div className="border-b pb-4">
+  <label className="text-gray-600 font-semibold mb-2">Profile Image</label>
+  <input
+    type="file"
+    accept="image/*"
+    onChange={handleImageChange}
+    className="border rounded-lg p-2 mb-2 w-full"
+  />
+  {imagePreview && (
+    <div className="mb-2">
+      <img
+        src={imagePreview}
+        alt="Preview"
+        className="w-16 h-16 rounded-full object-cover mx-auto" // Giảm kích thước ảnh preview
+      />
+    </div>
+  )}
+  <button
+    onClick={handleImageUpload}
+    className="bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2 px-6 rounded-lg transition duration-300 text-sm w-full sm:w-auto"
+  >
+    Update Image
+  </button>
+</div>
+
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               {renderEditableField('Display Name', 'Display Name', userInfo.userName || 'Choose display name')}
@@ -152,8 +239,7 @@ const ProfilePage = () => {
               {renderEditableField('Date of Birth', 'Date of Birth', userInfo.dateOfBirth || 'Enter your date of birth')}
               {renderEditableField('Nationality', 'Nationality', userInfo.nationality || 'Select your country/region')}
               {renderEditableField('Gender', 'Gender', userInfo.gender || 'Select gender')}
-              {renderEditableField('Address', 'Address', userInfo.address || 'Enter address')}
-              {renderEditableField('Passport Information', 'Passport Information', userInfo.passportInformation || 'Not provided')}
+              {renderEditableField('Address', 'Address', userInfo.address || 'Add your address')}
             </div>
           </div>
         </div>
