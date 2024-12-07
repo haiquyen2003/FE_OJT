@@ -87,41 +87,37 @@ const LoginPage = () => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
     const email = params.get('email');
-    const roles = params.get('roles');
-  
-    if (token) {
-      // Save token and user details in localStorage
-      localStorage.setItem('token', token);
-      localStorage.setItem('email', email);
-      localStorage.setItem('roles', roles);
-  
-      // Clear query parameters from URL after processing
-      window.history.replaceState({}, document.title, window.location.pathname);
-  
-      // Redirect to appropriate page based on roles
-      let parsedRoles = [];
-      try {
-        parsedRoles = roles ? JSON.parse(roles) : [];
-      } catch (e) {
-        console.error('Error parsing roles:', e);
-      }
-  
-      if (parsedRoles && Array.isArray(parsedRoles)) {
-        if (parsedRoles.includes('Admin')) {
-          navigate('/dashboard');
-        } else if (parsedRoles.includes('User')) {
-          navigate('/profile');
-        } else if (parsedRoles.includes('Hotel')) {
-          navigate('/Hotelmanager');
-        } else {
-          setErrorMessage('Invalid user roles.');
-        }
-      } else {
-        setErrorMessage('Invalid user roles.');
-      }
+    const roles = params.get('roles');  // Lấy giá trị roles từ URL
+
+    let parsedRoles = [];
+
+    // Kiểm tra nếu roles là chuỗi JSON hợp lệ
+    try {
+        parsedRoles = JSON.parse(roles);  // Nếu là chuỗi JSON hợp lệ, parse thành mảng
+    } catch (e) {
+        // Nếu không phải JSON hợp lệ, xử lý như chuỗi thông thường
+        parsedRoles = [roles];
     }
-  }, [navigate]);
-  
+
+    if (token) {
+        // Lưu token và thông tin người dùng vào localStorage
+        localStorage.setItem('token', token);
+        localStorage.setItem('email', email);
+        localStorage.setItem('roles', JSON.stringify(parsedRoles)); // Lưu roles dưới dạng JSON
+
+        // Điều hướng dựa trên vai trò
+        if (parsedRoles.includes('Admin')) {
+            navigate('/dashboard');
+        } else if (parsedRoles.includes('User')) {
+            navigate('/profile');
+        } else if (parsedRoles.includes('Hotel')) {
+            navigate('/Hotelmanager');
+        } else {
+            setErrorMessage('Invalid user roles.');
+        }
+    }
+}, [navigate]);
+
 
   return (
     <motion.div

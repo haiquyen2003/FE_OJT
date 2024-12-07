@@ -1,5 +1,19 @@
 import React, { useState } from 'react';
-import { FaChevronLeft, FaChevronRight, FaCamera, FaTimes } from 'react-icons/fa';
+import { 
+  Box, 
+  Grid, 
+  Modal, 
+  IconButton, 
+  Typography, 
+  ImageList, 
+  ImageListItem 
+} from '@mui/material';
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  CameraAlt, 
+  Close 
+} from '@mui/icons-material';
 
 const HotelGallery = ({ images }) => {
   const [showAll, setShowAll] = useState(false);
@@ -20,112 +34,147 @@ const HotelGallery = ({ images }) => {
     setShowAll(true);
   };
 
-  // Handle closing modal when clicking outside of the modal content
-  const handleCloseModal = (e) => {
-    // Prevent closing if the click is on the modal content (image or other parts)
-    if (e.target === e.currentTarget) {
-      setShowAll(false);
-    }
-  };
-
   return (
-    <div className="w-full max-w-6xl mx-auto">
-      <div className="grid grid-cols-4 grid-rows-2 gap-2 h-[400px] relative rounded-lg overflow-hidden">
-        <div className="col-span-2 row-span-2 relative">
-          <img
+    <Box sx={{ maxWidth: 'lg', mx: 'auto' }}>
+      <Grid container spacing={1} sx={{ height: 400 }}>
+        <Grid item xs={6} sx={{ height: '100%' }}>
+          <Box
+            component="img"
             src={images[0].imageUrl}
             alt={images[0].description}
-            className="w-full h-full object-cover cursor-pointer hover:opacity-95 transition-opacity"
-            onClick={() => {
-              setSelectedImage(0);
-              setShowAll(true);
+            sx={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              cursor: 'pointer',
+              '&:hover': { opacity: 0.95 },
+              transition: 'opacity 0.3s',
             }}
+            onClick={() => handleImageClick(0)}
           />
-        </div>
-        {displayImages.slice(1).map((image, index) => (
-          <div key={image.offeringImageId} className="relative">
-            <img
-              src={image.imageUrl}
-              alt={image.description}
-              className="w-full h-full object-cover cursor-pointer hover:opacity-95 transition-opacity"
-              onClick={() => {
-                setSelectedImage(index + 1);
-                setShowAll(true);
+        </Grid>
+        <Grid item xs={6} container spacing={1}>
+          {displayImages.slice(1).map((image, index) => (
+            <Grid item xs={6} key={image.offeringImageId}>
+              <Box sx={{ position: 'relative', height: '100%' }}>
+                <Box
+                  component="img"
+                  src={image.imageUrl}
+                  alt={image.description}
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    cursor: 'pointer',
+                    '&:hover': { opacity: 0.95 },
+                    transition: 'opacity 0.3s',
+                  }}
+                  onClick={() => handleImageClick(index + 1)}
+                />
+                {index === 3 && images.length > 5 && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      bgcolor: 'rgba(0, 0, 0, 0.5)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => setShowAll(true)}
+                  >
+                    <Box sx={{ color: 'white', textAlign: 'center' }}>
+                      <CameraAlt sx={{ width: 24, height: 24, mb: 1 }} />
+                      <Typography variant="body2" fontWeight="medium">
+                        +{images.length - 5} ảnh
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+            </Grid>
+          ))}
+        </Grid>
+      </Grid>
+
+      <Modal
+        open={showAll}
+        onClose={() => setShowAll(false)}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Box sx={{ outline: 'none', width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Box sx={{ flexGrow: 1, position: 'relative', bgcolor: 'black' }}>
+            <IconButton
+              onClick={() => setShowAll(false)}
+              sx={{ position: 'absolute', right: 16, top: 16, color: 'white' }}
+            >
+              <Close />
+            </IconButton>
+            <Box
+              component="img"
+              src={images[selectedImage].imageUrl}
+              alt={images[selectedImage].description}
+              sx={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: 'contain',
               }}
             />
-            {index === 3 && images.length > 5 && (
-              <div
-                className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center cursor-pointer"
-                onClick={() => setShowAll(true)}
-              >
-                <div className="text-white text-center">
-                  <FaCamera className="w-6 h-6 mx-auto mb-2" />
-                  <span className="font-medium">+{images.length - 5} ảnh</span>
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {showAll && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col"
-          onClick={handleCloseModal} // Close when clicking outside the modal content
-        >
-          <div className="relative flex-1">
-            <button
-              className="absolute right-4 top-4 text-white hover:text-gray-300"
-              onClick={() => setShowAll(false)}
-            >
-              <FaTimes className="w-6 h-6" />
-            </button>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <img
-                src={images[selectedImage].imageUrl}
-                alt={images[selectedImage].description}
-                className="max-w-full max-h-full object-contain"
-              />
-            </div>
-            <button
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300"
+            <IconButton
               onClick={handlePrevious}
+              sx={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'white' }}
             >
-              <FaChevronLeft className="w-8 h-8" />
-            </button>
-            <button
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300"
+              <ChevronLeft />
+            </IconButton>
+            <IconButton
               onClick={handleNext}
+              sx={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', color: 'white' }}
             >
-              <FaChevronRight className="w-8 h-8" />
-            </button>
-          </div>
-          <div className="bg-white p-4">
-            <div className="flex gap-2 overflow-x-auto pb-2">
+              <ChevronRight />
+            </IconButton>
+          </Box>
+          <Box sx={{ bgcolor: 'white', p: 2 }}>
+            <ImageList sx={{ display: 'flex', overflowX: 'auto', mb: 2 }} cols={images.length}>
               {images.map((image, index) => (
-                <div
+                <ImageListItem 
                   key={image.offeringImageId}
-                  className={`flex-shrink-0 w-20 h-20 cursor-pointer transition-all ${
-                    selectedImage === index ? 'ring-2 ring-blue-500' : ''
-                  }`}
+                  sx={{ 
+                    width: 80, 
+                    height: 80, 
+                    flexShrink: 0,
+                    cursor: 'pointer',
+                    border: selectedImage === index ? '2px solid #1976d2' : 'none',
+                    borderRadius: 1,
+                    overflow: 'hidden'
+                  }}
                   onClick={() => setSelectedImage(index)}
                 >
                   <img
                     src={image.imageUrl}
                     alt={image.description}
-                    className="w-full h-full object-cover rounded-lg"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
-                </div>
+                </ImageListItem>
               ))}
-            </div>
-            <p className="text-sm text-gray-600 mt-2">
+            </ImageList>
+            <Typography variant="body2" color="text.secondary">
               {images[selectedImage].description}
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
+            </Typography>
+          </Box>
+        </Box>
+      </Modal>
+    </Box>
   );
 };
 
 export default HotelGallery;
+

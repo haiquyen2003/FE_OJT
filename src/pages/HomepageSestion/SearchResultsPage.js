@@ -157,7 +157,23 @@ const SearchResultsPage = () => {
             <Grid container spacing={3}>
               {results.map((result, index) => (
                 <Grid item xs={12} sm={6} md={4} key={index}>
-                  <Card>
+                  <Card 
+                  onClick={() => {
+                    const queryParams = new URLSearchParams({
+                      start_Date: searchParams.start_Date?.toISOString().split('T')[0] || '',
+                      end_Date: searchParams.end_Date?.toISOString().split('T')[0] || '',
+                      number_Of_People: searchParams.number_Of_People || '1'
+                    });
+                    
+                    navigate(`/hotel/${result.serviceId}?${queryParams.toString()}`);
+                  }}
+                  sx={{ 
+                    cursor: 'pointer', 
+                    transition: 'transform 0.2s',
+                    '&:hover': {
+                      transform: 'scale(1.05)'
+                    }
+                  }}>
                     <CardMedia
                       component="img"
                       height="140"
@@ -195,4 +211,3 @@ const SearchResultsPage = () => {
 };
 
 export default SearchResultsPage;
-
