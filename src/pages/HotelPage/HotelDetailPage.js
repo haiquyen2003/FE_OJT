@@ -16,7 +16,9 @@ const HotelDetailPage = () => {
   const [hotelImages, setHotelImages] = useState([]);
   const [availableRooms, setAvailableRooms] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [hotelError, setHotelError] = useState(null);  // State for hotel error
+  const [roomsError, setRoomsError] = useState(null);  // State for rooms error
+  const [roomDetailsError, setRoomDetailsError] = useState(null);  // State for room details error
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -47,9 +49,10 @@ const HotelDetailPage = () => {
         }
       );
       setAvailableRooms(response.data);
+      setRoomsError(null); // Reset error if rooms are fetched successfully
     } catch (err) {
       console.error('Error fetching available rooms:', err);
-      setError('Không thể tải dữ liệu phòng trống');
+      setRoomsError('Không thể tải dữ liệu phòng trống');
     }
   };
 
@@ -58,58 +61,41 @@ const HotelDetailPage = () => {
       const response = await axios.get(`https://localhost:7253/api/Offering/${offeringId}`);
       setSelectedRoom(response.data);
       setIsModalOpen(true);
+      setRoomDetailsError(null); // Reset error if room details are fetched successfully
     } catch (err) {
       console.error('Error fetching room details:', err);
-      setError('Không thể tải chi tiết phòng');
+      setRoomDetailsError('Không thể tải chi tiết phòng');
+    }
+  };
+
+  const fetchHotelDetails = async () => {
+    try {
+      const hotelResponse = await axios.get(
+        `https://localhost:7253/api/HotelService/Hotel_Detail?ServiceId=${serviceId}`
+      );
+      setHotelData(hotelResponse.data);
+
+      const imagesResponse = await axios.get(
+        `https://localhost:7253/api/HotelService/InmageByIDservice?ServiceId=${serviceId}`
+      );
+      setHotelImages(imagesResponse.data.result);
+
+      if (initialCheckInDate && initialCheckOutDate) {
+        await fetchAvailableRooms(initialCheckInDate, initialCheckOutDate, initialNumberOfPeople);
+      }
+
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching hotel details:', err);
+      setHotelError('Không thể tải dữ liệu khách sạn');
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    const fetchHotelDetails = async () => {
-      try {
-        const hotelResponse = await axios.get(
-          `https://localhost:7253/api/HotelService/Hotel_Detail?ServiceId=${serviceId}`
-        );
-        setHotelData(hotelResponse.data);
-
-        const imagesResponse = await axios.get(
-          `https://localhost:7253/api/HotelService/InmageByIDservice?ServiceId=${serviceId}`
-        );
-        setHotelImages(imagesResponse.data.result);
-
-        if (initialCheckInDate && initialCheckOutDate) {
-          await fetchAvailableRooms(initialCheckInDate, initialCheckOutDate, initialNumberOfPeople);
-        }
-
-        setLoading(false);
-      } catch (err) {
-        console.error('Error fetching hotel details:', err);
-        setError('Không thể tải dữ liệu khách sạn');
-        setLoading(false);
-      }
-    };
-
     fetchHotelDetails();
   }, [serviceId, initialCheckInDate, initialCheckOutDate, initialNumberOfPeople]);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="spinner-border" role="status">
-          <span className="visually-hidden">Đang tải...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex justify-center items-center min-h-screen text-red-500">
-        {error}
-      </div>
-    );
-  }
-  
   const handleBookRoom = (selectedQuantities) => {
     const bookingData = {
       serviceId: serviceId,
@@ -130,32 +116,48 @@ const HotelDetailPage = () => {
         return total + (room ? room.price * quantity : 0);
       }, 0)
     };
-  
+
     // Chuyển hướng đến trang booking với dữ liệu đã chọn
     navigate('/booking', { state: { bookingData } });
   };
-  
-  
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="spinner-border" role="status">
+          <span className="visually-hidden">Đang tải...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
       <Header />
       
       <div className="container mx-auto px-4 py-8">
-        {hotelData && <HotelHeader hotel={hotelData} />}
+        {hotelData ? (
+          <HotelHeader hotel={hotelData} />
+        ) : hotelError ? (
+          <div className="text-red-500">{hotelError}</div>
+        ) : null}
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <BookingForm 
-          hotelData={hotelData}
-          availableRooms={availableRooms}
-          initialCheckInDate={initialCheckInDate}
-          initialCheckOutDate={initialCheckOutDate}
-          initialNumberOfPeople={initialNumberOfPeople}
-          onSearch={fetchAvailableRooms}
-          onRoomSelect={fetchRoomDetails}
-          onBookRoom={handleBookRoom}
-        />
+        {roomsError ? (
+          <div className="text-red-500">{roomsError}</div>
+        ) : (
+          <BookingForm 
+            hotelData={hotelData}
+            availableRooms={availableRooms}
+            initialCheckInDate={initialCheckInDate}
+            initialCheckOutDate={initialCheckOutDate}
+            initialNumberOfPeople={initialNumberOfPeople}
+            onSearch={fetchAvailableRooms}
+            onRoomSelect={fetchRoomDetails}
+            onBookRoom={handleBookRoom}
+          />
+        )}
       </div>
 
       <HotelGallery images={hotelImages} />
@@ -165,8 +167,12 @@ const HotelDetailPage = () => {
           room={selectedRoom}
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          onBookRoom={onBookRoom}  // Truyền hàm onBookRoom vào RoomDetailsModal
+          onBookRoom={onBookRoom}
         />
+      )}
+
+      {roomDetailsError && (
+        <div className="text-red-500">{roomDetailsError}</div>
       )}
     </div>
   );

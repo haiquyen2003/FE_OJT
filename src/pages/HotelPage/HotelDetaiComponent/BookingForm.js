@@ -54,33 +54,34 @@ const BookingForm = ({
     setTotalTax(tax);
   }, [availableRooms]);
 
+  // 
   const handleBookRoom = () => {
     const bookingData = {
       serviceId: serviceId,
       numberOfPeople: parseInt(numberOfPeople),
-      startDate: checkInDate,
-      endDate: checkOutDate,
+      startDate: new Date(checkInDate).toISOString(),  // Đảm bảo định dạng ISO
+      endDate: new Date(checkOutDate).toISOString(),    // Đảm bảo định dạng ISO
       totalPrice: totalPrice + totalTax,
-      bookingOfferings: Object.entries(selectedQuantities).map(([offeringId, numberOfRooms,]) => {
+      bookingOfferings: Object.entries(selectedQuantities).map(([offeringId, numberOfRooms]) => {
         const room = availableRooms.find(r => r.offeringId === parseInt(offeringId));
         return {
           offeringId: parseInt(offeringId),
-          roomType: room.roomType,
-          numberOfRooms,
+          numberOfRooms: numberOfRooms,
           totalPrice: room.price * numberOfRooms
         };
       }),
-      detailBookings: Object.entries(selectedQuantities).map(([offeringId, unitNumber]) => {
+      detailBookings: Object.entries(selectedQuantities).reduce((acc, [offeringId, unitNumber]) => {
         const room = availableRooms.find(r => r.offeringId === parseInt(offeringId));
-        return {
-          unitNumber,
+        acc[offeringId] = {
+          unitNumber: unitNumber,
           totalPrice: room.price * unitNumber,
-          ticketType: "string",
-          createdAt: new Date().toISOString()
+          ticketType: "string",  // Placeholder cho ticketType
+          createdAt: new Date().toISOString()  // Đảm bảo định dạng ISO
         };
-      })
+        return acc;
+      }, {})
     };
-
+  
     navigate('/booking', { state: { bookingData } });
   };
 

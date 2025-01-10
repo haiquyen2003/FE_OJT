@@ -177,7 +177,7 @@ const SearchResultsPage = () => {
                     <CardMedia
                       component="img"
                       height="140"
-                      image={`https://source.unsplash.com/random/400x200?hotel,${index}`}
+                      image={result.urlImage}
                       alt={result.serviceName}
                     />
                     <CardContent>

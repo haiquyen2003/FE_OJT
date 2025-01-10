@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaHome, FaPlane, FaUserCircle, FaSignOutAlt, FaWallet, FaBars } from 'react-icons/fa'; // Import FaWallet and FaBars
+import { FaHome, FaPlane, FaUserCircle, FaSignOutAlt, FaWallet, FaBars,FaClipboardCheck } from 'react-icons/fa'; // Import FaWallet and FaBars
 import { Link, useLocation } from 'react-router-dom';
 import { CSSTransition } from 'react-transition-group'; // Import for smooth transitions
 
@@ -79,14 +79,14 @@ const Sidebar = ({ activeItem, setActiveItem }) => {
               </li>
               <li>
                 <Link
-                  to="/destinations"
-                  onClick={() => handleItemClick('/destinations')}
+                  to="/UserBooking"
+                  onClick={() => handleItemClick('/UserBooking')}
                   className={`flex items-center p-3 rounded-md transition duration-300 text-slate-500 hover:bg-blue-100  ${
-                    activeItem === '/destinations' ? 'bg-blue-400 text-white ' : ''
+                    activeItem === '/UserBooking' ? 'bg-blue-400 text-white ' : ''
                   }`}
                 >
-                  <FaPlane className={`mr-3 ${activeItem === '/destinations' ? 'text-white' : ''}`} />
-                  Destinations
+                  <FaClipboardCheck  className={`mr-3 ${activeItem === '/destinations' ? 'text-white' : ''}`} />
+                  Reservation
                 </Link>
               </li>
               <li>

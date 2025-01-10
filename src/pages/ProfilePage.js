@@ -1,29 +1,48 @@
 import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Avatar,
+  Button,
+  Grid,
+  styled
+} from '@mui/material';
 import Layout from '../components/Layout';
 
-// Helper function to decode the JWT token and extract UserId from claims
-const getUserIdFromToken = (token) => {
-  if (!token) return null;
-  
-  const base64Url = token.split('.')[1];
-  const base64 = base64Url.replace('-', '+').replace('_', '/');
-  const decoded = JSON.parse(window.atob(base64));
-  
-  // Assuming 'UserID' is the key in the claims, update it if necessary
-  return decoded.UserID;
-};
+import EditableField from './UserPage/EditableField';
+const StyledCard = styled(Card)({
+  padding: '32px',
+  borderRadius: '16px',
+  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+  margin: '24px auto',
+  maxWidth: '1000px'
+});
+
+const VerifiedBadge = styled(Typography)({
+  color: '#22C55E',
+  fontWeight: 500,
+  display: 'inline-block',
+  marginLeft: '8px'
+});
+
+const ChangePictureButton = styled(Button)({
+  backgroundColor: '#EEF4FF',
+  color: '#0066FF',
+  textTransform: 'none',
+  padding: '8px 16px',
+  borderRadius: '8px',
+  '&:hover': {
+    backgroundColor: '#DCE7FF'
+  }
+});
 
 const ProfilePage = () => {
-  const [editingField, setEditingField] = useState(null);
-  const [fieldValue, setFieldValue] = useState('');
   const [userInfo, setUserInfo] = useState(null);
-  const [selectedImage, setSelectedImage] = useState(null);  // State to hold selected image
-  const [imagePreview, setImagePreview] = useState(null); // State to show image preview
-
-  // Get the token from localStorage
+  const [imagePreview, setImagePreview] = useState(null); // Added image preview state
   const token = localStorage.getItem('token');
 
-  // Fetch user information from API
   const fetchUserInfo = async () => {
     if (!token) {
       console.error('No token available!');
@@ -39,44 +58,31 @@ const ProfilePage = () => {
         },
       });
 
-      if (!response.ok) {
-        throw new Error('Error fetching user info');
-      }
-
+      if (!response.ok) throw new Error('Error fetching user info');
       const data = await response.json();
-      setUserInfo(data); // Set user data in state
+      setUserInfo(data);
     } catch (error) {
       console.error('Error:', error);
     }
   };
 
-  // Fetch user information on component mount
   useEffect(() => {
-    fetchUserInfo(); // Fetch user info when component mounts
+    fetchUserInfo();
   }, []);
 
-  // Handle image file change
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result); // Set image preview
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  const handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
 
-  // Handle image upload
-  const handleImageUpload = async () => {
-    if (!selectedImage) {
-      console.error('No image selected!');
-      return;
-    }
+    // Create image preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
 
     const formData = new FormData();
-    formData.append('Image', selectedImage);
+    formData.append('Image', file);
 
     try {
       const response = await fetch('https://localhost:7253/api/User/update-image', {
@@ -87,41 +93,16 @@ const ProfilePage = () => {
         body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error('Error updating profile image');
-      }
-
+      if (!response.ok) throw new Error('Error updating profile image');
       const data = await response.json();
-      console.log('Profile image updated', data);
-      setUserInfo(prevInfo => ({
-        ...prevInfo,
-        image: data.imageUrl, // Update user info with new image URL
-      }));
+      setUserInfo(prev => ({ ...prev, image: data.imageUrl }));
+      setImagePreview(null); // Clear preview after successful upload
     } catch (error) {
       console.error('Error uploading image:', error);
     }
   };
 
-  // Handle edit button click
-  const handleEditClick = (field, currentValue) => {
-    setEditingField(field);
-    setFieldValue(currentValue);
-  };
-
-  // Handle save
-  const handleSave = async () => {
-    if (!token) {
-      console.error('No token available!');
-      return;
-    }
-
-    const userId = getUserIdFromToken(token); // Get UserId from token
-
-    if (!userId) {
-      console.error('User ID not found in token!');
-      return;
-    }
-
+  const handleSave = async (field, value) => {
     try {
       const response = await fetch('https://localhost:7253/api/User/update-field', {
         method: 'POST',
@@ -130,122 +111,135 @@ const ProfilePage = () => {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          Field: editingField,
-          Value: fieldValue,
+          field: field.toLowerCase(),
+          value: value,
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to update user information');
-      }
-
+      if (!response.ok) throw new Error('Failed to update user information');
       const data = await response.json();
-      console.log('User information updated', data);
-      setEditingField(null); // Close the edit form after saving
+      setUserInfo(prev => ({ ...prev, [field.toLowerCase()]: value }));
     } catch (error) {
       console.error('Error saving the field:', error);
     }
   };
 
-  // Handle cancel
-  const handleCancel = () => {
-    setEditingField(null); // Close the edit form without saving
-  };
-
-  // Render editable field
-  const renderEditableField = (fieldName, label, currentValue) => {
-    return editingField === fieldName ? (
-      <div className="flex flex-col border-b pb-4">
-        <label className="text-gray-600 font-bold mb-2">{label} *</label>
-        <input
-          type="text"
-          value={fieldValue}
-          onChange={(e) => setFieldValue(e.target.value)}
-          className="border rounded-lg p-4 focus:outline-none focus:border-blue-600"
-        />
-        <div className="flex justify-end mt-4 space-x-6">
-          <button onClick={handleCancel} className="text-blue-700 hover:underline text-lg">Cancel</button>
-          <button onClick={handleSave} className="bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 px-8 rounded-lg transition duration-300 text-lg">Save</button>
-        </div>
-      </div>
-    ) : (
-      <div className="flex justify-between items-center border-b pb-4">
-        <div>
-          <p className="text-gray-600 text-lg font-semibold">{label}</p>
-          <p className="text-xl font-bold text-gray-900">{currentValue}</p>
-        </div>
-        <button onClick={() => handleEditClick(fieldName, currentValue)} className="text-blue-700 hover:underline text-lg">Edit</button>
-      </div>
-    );
-  };
-
-  if (!userInfo) return <div>Loading...</div>;
+  if (!userInfo) return <Typography>Loading...</Typography>;
 
   return (
     <Layout activeItem="/profile">
-      <div className="container mx-auto h-full">
-        <h1 className="text-4xl font-bold text-blue-800 mb-10">Personal Information</h1>
+      <StyledCard>
+        <CardContent>
+          <Box display="flex" alignItems="center" justifyContent="space-between" mb={4}>
+            <Box display="flex" alignItems="center" gap={2}>
+              <Avatar
+                src={userInfo.image || '/placeholder.svg?height=120&width=120'}
+                alt="User Avatar"
+                sx={{ width: 120, height: 120 }}
+              />
+              <Box>
+                <Typography variant="h6">{userInfo.email}</Typography>
+                <VerifiedBadge>Verified</VerifiedBadge>
+              </Box>
+            </Box>
+            <Box>
+              <input
+                accept="image/*"
+                style={{ display: 'none' }}
+                id="change-profile-picture"
+                type="file"
+                onChange={handleImageUpload}
+              />
+              <label htmlFor="change-profile-picture">
+                <ChangePictureButton component="span">
+                  {userInfo.image ? 'Change Profile Picture' : 'Upload Profile Picture'}
+                </ChangePictureButton>
+              </label>
+            </Box>
+          </Box>
 
-        <div className="bg-white shadow-lg rounded-xl p-10 h-full">
-          <div className="grid grid-cols-1 gap-6">
-            <div className="flex flex-col md:flex-row justify-between items-center mb-10">
-              <div className="flex items-center space-x-6">
-                {/* Hiển thị hình ảnh người dùng */}
-                <img
-                  src={userInfo.image ? userInfo.image : 'default-avatar-url'}
-                  alt="User Avatar"
-                  className="w-32 h-32 rounded-full object-cover"
-                />
-                <div>
-                  <h2 className="text-3xl font-bold text-gray-900">{userInfo.userName}</h2>
-                  <p className="text-lg text-gray-700">
-                    {userInfo.email} <span className="text-green-600 font-semibold">Verified</span>
-                  </p>
-                </div>
-              </div>
-            </div>
+          {imagePreview && (
+            <Box mb={4} textAlign="center">
+              <Avatar
+                src={imagePreview}
+                alt="Preview"
+                sx={{
+                  width: 128,
+                  height: 128,
+                  mx: 'auto',
+                  border: 4,
+                  borderColor: 'primary.light',
+                }}
+              />
+              <Button
+                onClick={() => handleImageUpload({ target: { files: [new File([imagePreview], 'image')] } })}
+                variant="contained"
+                color="primary"
+                sx={{ mt: 2 }}
+              >
+                Upload New Image
+              </Button>
+            </Box>
+          )}
 
-            {/* Chọn ảnh và cập nhật ảnh */}
-            <div className="border-b pb-4">
-  <label className="text-gray-600 font-semibold mb-2">Profile Image</label>
-  <input
-    type="file"
-    accept="image/*"
-    onChange={handleImageChange}
-    className="border rounded-lg p-2 mb-2 w-full"
-  />
-  {imagePreview && (
-    <div className="mb-2">
-      <img
-        src={imagePreview}
-        alt="Preview"
-        className="w-16 h-16 rounded-full object-cover mx-auto" // Giảm kích thước ảnh preview
-      />
-    </div>
-  )}
-  <button
-    onClick={handleImageUpload}
-    className="bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2 px-6 rounded-lg transition duration-300 text-sm w-full sm:w-auto"
-  >
-    Update Image
-  </button>
-</div>
+          <Grid container spacing={4}>
+            <Grid item xs={12} md={6}>
+              <EditableField
+                label="User Name"
+                value={userInfo.userName}
+                onSave={(value) => handleSave('userName', value)}
+              />
 
+              <EditableField
+                label="Phone Number"
+                value={userInfo.phoneNumber}
+                onSave={(value) => handleSave('phoneNumber', value)}
+                type="tel"
+              />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-              {renderEditableField('Display Name', 'Display Name', userInfo.userName || 'Choose display name')}
-              {renderEditableField('Email Address', 'Email Address', userInfo.email || 'vanhaiquyen@gmail.com')}
-              {renderEditableField('Phone Number', 'Phone Number', userInfo.phoneNumber || 'Add your phone number')}
-              {renderEditableField('Date of Birth', 'Date of Birth', userInfo.dateOfBirth || 'Enter your date of birth')}
-              {renderEditableField('Nationality', 'Nationality', userInfo.nationality || 'Select your country/region')}
-              {renderEditableField('Gender', 'Gender', userInfo.gender || 'Select gender')}
-              {renderEditableField('Address', 'Address', userInfo.address || 'Add your address')}
-            </div>
-          </div>
-        </div>
-      </div>
+              <EditableField
+                label="Nationality"
+                value={userInfo.nationality}
+                onSave={(value) => handleSave('nationality', value)}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <EditableField
+                label="Email Address"
+                value={userInfo.email}
+                disabled={true}
+                type="email"
+              />
+
+              <EditableField
+                label="Date of Birth"
+                value={userInfo.dateOfBirth}
+                onSave={(value) => handleSave('dateOfBirth', value)}
+                type="date"
+              />
+
+              <EditableField
+                label="Gender"
+                value={userInfo.gender}
+                onSave={(value) => handleSave('gender', value)}
+                type="gender"
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <EditableField
+                label="Address"
+                value={userInfo.address}
+                onSave={(value) => handleSave('address', value)}
+              />
+            </Grid>
+          </Grid>
+        </CardContent>
+      </StyledCard>
     </Layout>
   );
 };
 
 export default ProfilePage;
+
